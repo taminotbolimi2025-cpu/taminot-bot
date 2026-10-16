@@ -14,8 +14,7 @@ from keyboards import (
     get_admin_main_keyboard
 )
 from handlers.states import TaskCreationStates
-from config import ADMIN_IDS
-from datetime import datetime
+from config import ADMIN_IDS, get_tashkent_str
 
 router = Router()
 
@@ -117,7 +116,7 @@ async def process_task_content(message: Message, state: FSMContext, bot: Bot):
     await state.clear()
 
     # 2. Notify employee if already connected to bot
-    now_str = datetime.now().strftime("%d.%m.%Y %H:%M")
+    now_str = get_tashkent_str()
     worker_msg = (
         f"🔔 <b>YANGI VAZIFA #{task_id}!</b>\n"
         f"────────────────────\n"

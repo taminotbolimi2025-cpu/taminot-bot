@@ -1,6 +1,16 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import datetime, timezone, timedelta
+
+# Tashkent / Uzbekistan timezone (UTC+5)
+UZB_TZ = timezone(timedelta(hours=5))
+
+def get_tashkent_str(fmt="%d.%m.%Y %H:%M"):
+    return datetime.now(UZB_TZ).strftime(fmt)
+
+def get_tashkent_db_str():
+    return datetime.now(UZB_TZ).strftime("%Y-%m-%d %H:%M:%S")
 
 # Paths to check for environment configuration
 desktop_txt_path = Path("C:/Users/iMaster/Desktop/TAMINOT_BOT_SOZLAMALARI.txt")

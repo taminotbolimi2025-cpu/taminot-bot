@@ -18,7 +18,7 @@ from keyboards import (
     get_completion_report_keyboard
 )
 from handlers.states import TaskCompletionStates
-from datetime import datetime
+from config import get_tashkent_str
 
 router = Router()
 
@@ -162,7 +162,7 @@ async def finish_task_submission(task_id: int, comment: str, file_id: str, file_
 
     # Update in DB
     await complete_task(task_id, comment=comment, file_id=file_id, file_type=file_type)
-    now_str = datetime.now().strftime("%d.%m.%Y %H:%M")
+    now_str = get_tashkent_str()
 
     worker_name = task["employee_name"] or user.full_name
     task_title = task["title"]
@@ -253,7 +253,7 @@ async def process_task_progress(callback: CallbackQuery, bot: Bot):
     await callback.answer("⏳ Holat 'Jarayonda' deb o'zgartirildi!")
 
     task_title = task["title"]
-    now_str = datetime.now().strftime("%d.%m.%Y %H:%M")
+    now_str = get_tashkent_str()
 
     progress_text = (
         f"⏳ <b>VAZIFA JARAYONDA</b>\n"
@@ -354,7 +354,7 @@ async def process_execute_reassign(callback: CallbackQuery, bot: Bot):
     await callback.answer(f"Vazifa {new_worker_name}ga o'tkazildi!", show_alert=True)
 
     # 3. Send task to the NEW employee
-    now_str = datetime.now().strftime("%d.%m.%Y %H:%M")
+    now_str = get_tashkent_str()
     new_worker_msg = (
         f"🔔 <b>SIZGA VAZIFA O'TKAZILDI #{task_id}!</b>\n"
         f"────────────────────\n"

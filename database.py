@@ -1,6 +1,5 @@
 import aiosqlite
-from datetime import datetime
-from config import DB_PATH, ADMIN_IDS, DEFAULT_GROUP_ID
+from config import DB_PATH, ADMIN_IDS, DEFAULT_GROUP_ID, get_tashkent_db_str
 
 INITIAL_EMPLOYEES = [
     "Zubayr Anvarov",
@@ -119,7 +118,7 @@ async def add_employee(full_name: str) -> int:
         return cursor.lastrowid
 
 async def create_task(title: str, description: str, employee_id: int, created_by: int, file_id: str = None, file_type: str = None) -> int:
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = get_tashkent_db_str()
     async with aiosqlite.connect(DB_PATH) as db:
         cursor = await db.execute(
             """
@@ -151,7 +150,7 @@ async def get_task(task_id: int):
         return await cursor.fetchone()
 
 async def update_task_status(task_id: int, status: str):
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S") if status == "done" else None
+    now = get_tashkent_db_str() if status == "done" else None
     async with aiosqlite.connect(DB_PATH) as db:
         if status == "done":
             await db.execute(
@@ -166,7 +165,7 @@ async def update_task_status(task_id: int, status: str):
         await db.commit()
 
 async def complete_task(task_id: int, comment: str = "", file_id: str = None, file_type: str = None):
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now = get_tashkent_db_str()
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute(
             """
