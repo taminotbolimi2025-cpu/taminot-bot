@@ -35,6 +35,9 @@ async def init_db():
                 completed_at TEXT,
                 file_id TEXT,
                 file_type TEXT,
+                completion_file_id TEXT,
+                completion_file_type TEXT,
+                completion_comment TEXT,
                 FOREIGN KEY (employee_id) REFERENCES employees (id)
             )
         """)
@@ -46,6 +49,12 @@ async def init_db():
             await db.execute("ALTER TABLE tasks ADD COLUMN file_id TEXT")
         if "file_type" not in cols:
             await db.execute("ALTER TABLE tasks ADD COLUMN file_type TEXT")
+        if "completion_file_id" not in cols:
+            await db.execute("ALTER TABLE tasks ADD COLUMN completion_file_id TEXT")
+        if "completion_file_type" not in cols:
+            await db.execute("ALTER TABLE tasks ADD COLUMN completion_file_type TEXT")
+        if "completion_comment" not in cols:
+            await db.execute("ALTER TABLE tasks ADD COLUMN completion_comment TEXT")
 
         # Settings table
         await db.execute("""
@@ -154,6 +163,23 @@ async def update_task_status(task_id: int, status: str):
                 "UPDATE tasks SET status = ? WHERE id = ?",
                 (status, task_id)
             )
+        await db.commit()
+
+async def complete_task(task_id: int, comment: str = "", file_id: str = None, file_type: str = None):
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            """
+            UPDATE tasks 
+            SET status = 'done', 
+                completed_at = ?, 
+                completion_comment = ?, 
+                completion_file_id = ?, 
+                completion_file_type = ? 
+            WHERE id = ?
+            """,
+            (now, comment, file_id, file_type, task_id)
+        )
         await db.commit()
 
 async def reassign_task(task_id: int, new_employee_id: int):

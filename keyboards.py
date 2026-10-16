@@ -55,6 +55,18 @@ def get_task_actions_keyboard(task_id: int) -> InlineKeyboardMarkup:
         ]
     )
 
+def get_completion_report_keyboard(task_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="⏩ Faylsiz / Faqat matn bilan tasdiqlash", callback_data=f"skip_report:{task_id}")
+            ],
+            [
+                InlineKeyboardButton(text="❌ Bekor qilish", callback_data=f"cancel_completion:{task_id}")
+            ]
+        ]
+    )
+
 def get_reassign_employee_keyboard(task_id: int, employees, current_emp_id: int = None) -> InlineKeyboardMarkup:
     builder = []
     for emp in employees:
