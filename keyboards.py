@@ -9,11 +9,12 @@ def get_admin_main_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="➕ Yangi vazifa berish"), KeyboardButton(text="📋 Mening vazifalarim")],
-            [KeyboardButton(text="📋 Vazifalar nazorati"), KeyboardButton(text="👥 Xodimlar ro'yxati")],
-            [KeyboardButton(text="⚙️ Guruhni sozlash")]
+            [KeyboardButton(text="📋 Vazifalar nazorati"), KeyboardButton(text="🗑 Vazifani o'chirish")],
+            [KeyboardButton(text="👥 Xodimlar ro'yxati"), KeyboardButton(text="⚙️ Guruhni sozlash")]
         ],
         resize_keyboard=True
     )
+
 
 def get_worker_main_keyboard() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
@@ -124,6 +125,34 @@ def get_task_filter_keyboard() -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(text="📋 Barcha vazifalar", callback_data="filter_tasks:all")
+            ],
+            [
+                InlineKeyboardButton(text="🗑 Vazifani o'chirish", callback_data="start_delete_task")
             ]
         ]
     )
+
+def get_delete_tasks_keyboard(tasks) -> InlineKeyboardMarkup:
+    builder = []
+    for t in tasks:
+        worker = t["employee_name"] or "Xodim"
+        raw_title = t["title"] or "Vazifa"
+        title_snippet = (raw_title[:20] + "...") if len(raw_title) > 23 else raw_title
+        status_icon = "⏳" if t["status"] == "in_progress" else ("✅" if t["status"] == "done" else "🔴")
+        text = f"{status_icon} #{t['id']} {title_snippet} ({worker})"
+        builder.append([InlineKeyboardButton(text=text, callback_data=f"ask_delete_task:{t['id']}")])
+    builder.append([InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel_delete_task")])
+    return InlineKeyboardMarkup(inline_keyboard=builder)
+
+def get_confirm_delete_keyboard(task_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🗑 Ha, butunlay o'chirilsin", callback_data=f"confirm_delete_task:{task_id}")
+            ],
+            [
+                InlineKeyboardButton(text="❌ Yo'q, bekor qilish", callback_data="cancel_delete_task")
+            ]
+        ]
+    )
+

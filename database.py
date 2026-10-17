@@ -275,6 +275,12 @@ async def reassign_task(task_id: int, new_employee_id: int):
         )
         await db.commit()
 
+async def delete_task(task_id: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+        await db.commit()
+
+
 async def get_employee_tasks(employee_id: int, active_only: bool = True):
     async with aiosqlite.connect(DB_PATH) as db:
         db.row_factory = aiosqlite.Row

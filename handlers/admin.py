@@ -1,11 +1,14 @@
 from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
+from aiogram.filters import Command
 from database import (
     get_all_employees,
     get_employee_by_id,
     create_task,
-    get_all_tasks
+    get_all_tasks,
+    get_task,
+    delete_task
 )
 from keyboards import (
     get_assign_employee_keyboard,
@@ -14,7 +17,9 @@ from keyboards import (
     get_admin_main_keyboard,
     get_file_comment_keyboard,
     get_deadline_keyboard,
-    get_custom_deadline_keyboard
+    get_custom_deadline_keyboard,
+    get_delete_tasks_keyboard,
+    get_confirm_delete_keyboard
 )
 from handlers.states import TaskCreationStates
 from config import ADMIN_IDS, get_tashkent_str, UZB_TZ
@@ -521,3 +526,129 @@ async def filter_tasks_callback(callback: CallbackQuery):
         parse_mode="HTML"
     )
     await callback.answer()
+
+@router.message(F.text == "🗑 Vazifani o'chirish")
+@router.message(Command("delete_task"))
+async def start_delete_task_menu(message: Message):
+    if not is_admin_check(message.from_user.id):
+        return
+
+    tasks = await get_all_tasks(filter_type="all", limit=20)
+    if not tasks:
+        await message.answer("⚠️ Hozircha tizimda o'chirish uchun vazifalar mavjud emas.")
+        return
+
+    await message.answer(
+        "🗑 <b>Vazifani o'chirish bo'limi</b>\n\n"
+        "Qaysi vazifani butunlay o'chirmoqchisiz? Tanlang:\n"
+        "<i>(O'chirilgan vazifa bazadan olib tashlanadi va xodimga xabar boradi)</i>",
+        reply_markup=get_delete_tasks_keyboard(tasks),
+        parse_mode="HTML"
+    )
+
+@router.callback_query(F.data == "start_delete_task")
+async def start_delete_task_callback(callback: CallbackQuery):
+    if not is_admin_check(callback.from_user.id):
+        await callback.answer("Ruxsat berilmagan!", show_alert=True)
+        return
+
+    tasks = await get_all_tasks(filter_type="all", limit=20)
+    if not tasks:
+        await callback.message.edit_text(
+            "⚠️ Hozircha tizimda o'chirish uchun vazifalar mavjud emas.",
+            reply_markup=get_task_filter_keyboard()
+        )
+        await callback.answer()
+        return
+
+    await callback.message.edit_text(
+        "🗑 <b>Vazifani o'chirish bo'limi</b>\n\n"
+        "Qaysi vazifani butunlay o'chirmoqchisiz? Tanlang:",
+        reply_markup=get_delete_tasks_keyboard(tasks),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("ask_delete_task:"))
+async def ask_delete_task_callback(callback: CallbackQuery):
+    if not is_admin_check(callback.from_user.id):
+        await callback.answer("Ruxsat berilmagan!", show_alert=True)
+        return
+
+    task_id = int(callback.data.split(":")[1])
+    task = await get_task(task_id)
+
+    if not task:
+        await callback.answer("Vazifa topilmadi!", show_alert=True)
+        return
+
+    status_label = "Jarayonda" if task["status"] == "in_progress" else ("Bajarildi" if task["status"] == "done" else "Kutilmoqda")
+    worker = task["employee_name"] or "Noma'lum"
+    deadline_label = task["deadline"] or "Muddatsiz"
+
+    confirm_text = (
+        f"⚠️ <b>DIQQAT! Vazifani o'chirmoqchimisiz?</b>\n"
+        f"────────────────────\n"
+        f"📌 <b>Vazifa #{task['id']}:</b> {task['title']}\n"
+        f"👤 <b>Ijrochi:</b> {worker}\n"
+        f"⏳ <b>Muddat:</b> {deadline_label}\n"
+        f"Holat: <i>{status_label}</i>\n"
+        f"────────────────────\n"
+        f"<i>Haqiqatan ham ushbu vazifani butunlay o'chirib tashlaysizmi?</i>"
+    )
+
+    await callback.message.edit_text(
+        confirm_text,
+        reply_markup=get_confirm_delete_keyboard(task_id),
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("confirm_delete_task:"))
+async def execute_delete_task_callback(callback: CallbackQuery, bot: Bot):
+    if not is_admin_check(callback.from_user.id):
+        await callback.answer("Ruxsat berilmagan!", show_alert=True)
+        return
+
+    task_id = int(callback.data.split(":")[1])
+    task = await get_task(task_id)
+
+    if not task:
+        await callback.message.edit_text("⚠️ Vazifa allaqachon o'chirilgan yoki mavjud emas.")
+        await callback.answer()
+        return
+
+    # Delete from database
+    await delete_task(task_id)
+
+    # Notify employee if assigned and connected
+    worker_tg_id = task["employee_telegram_id"]
+    admin_name = callback.from_user.full_name or "Rahbar"
+    if worker_tg_id:
+        try:
+            worker_notice = (
+                f"ℹ️ <b>VAZIFA BEKOR QILINDI</b>\n"
+                f"────────────────────\n"
+                f"📌 <b>Vazifa #{task_id}:</b> {task['title']}\n"
+                f"👑 <b>Rahbar:</b> {admin_name}\n"
+                f"────────────────────\n"
+                f"<i>Ushbu vazifa rahbar tomonidan bekor qilindi va tizimdan olib tashlandi.</i>"
+            )
+            await bot.send_message(chat_id=worker_tg_id, text=worker_notice, parse_mode="HTML")
+        except Exception:
+            pass
+
+    await callback.message.edit_text(
+        f"✅ <b>Vazifa #{task_id} muvaffaqiyatli o'chirildi!</b>\n\n"
+        f"📝 <b>Matn:</b> {task['title']}\n"
+        f"👤 <b>Xodim:</b> {task['employee_name'] or 'Noma\'lum'}\n\n"
+        f"<i>Vazifa bazadan butunlay olib tashlandi.</i>",
+        parse_mode="HTML"
+    )
+    await callback.answer("Vazifa o'chirildi!")
+
+@router.callback_query(F.data == "cancel_delete_task")
+async def cancel_delete_task_callback(callback: CallbackQuery):
+    await callback.message.edit_text("❌ Vazifani o'chirish bekor qilindi.")
+    await callback.answer("Bekor qilindi")
+

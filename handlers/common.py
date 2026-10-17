@@ -42,6 +42,7 @@ async def cmd_start(message: Message, bot: Bot):
             "• <b>➕ Yangi vazifa berish</b> — jamoaga yangi topshiriq yuklash (PDF/matn).\n"
             "• <b>📋 Mening vazifalarim</b> — sizga biriktirilgan vazifalar va ularni '✅ Bajarildi' qilish.\n"
             "• <b>📋 Vazifalar nazorati</b> — kim qaysi ishni qilayotganini kuzatish.\n"
+            "• <b>🗑 Vazifani o'chirish</b> — kerak bo'lmagan topshiriqni butunlay o'chirish.\n"
             "• <b>👥 Xodimlar ro'yxati</b> — xodimlar ulanish holati.\n"
             "• <b>⚙️ Guruhni sozlash</b> — hisobot guruhini ulash."
         )
