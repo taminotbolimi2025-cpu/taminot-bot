@@ -34,6 +34,43 @@ def get_assign_employee_keyboard(employees) -> InlineKeyboardMarkup:
     builder.append([InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel_task_creation")])
     return InlineKeyboardMarkup(inline_keyboard=builder)
 
+def get_file_comment_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="⏩ Izohsiz davom etish", callback_data="skip_file_comment")],
+            [InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel_task_creation")]
+        ]
+    )
+
+def get_deadline_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="📅 Bugun 18:00 gacha", callback_data="deadline_btn:today"),
+                InlineKeyboardButton(text="📅 Ertaga 18:00 gacha", callback_data="deadline_btn:tomorrow")
+            ],
+            [
+                InlineKeyboardButton(text="📅 2 kun muddat", callback_data="deadline_btn:2days"),
+                InlineKeyboardButton(text="📅 1 hafta muddat", callback_data="deadline_btn:1week")
+            ],
+            [
+                InlineKeyboardButton(text="✍️ Boshqa sana kiritish", callback_data="deadline_btn:custom"),
+                InlineKeyboardButton(text="⏩ Muddatsiz", callback_data="deadline_btn:none")
+            ],
+            [
+                InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel_task_creation")
+            ]
+        ]
+    )
+
+def get_custom_deadline_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="❌ Bekor qilish", callback_data="cancel_task_creation")]
+        ]
+    )
+
+
 def get_bind_employee_keyboard(employees) -> InlineKeyboardMarkup:
     builder = []
     for emp in employees:

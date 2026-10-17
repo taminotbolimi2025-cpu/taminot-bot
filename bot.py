@@ -17,6 +17,8 @@ from aiohttp import web
 from config import BOT_TOKEN
 from database import init_db
 from handlers import common, admin, worker
+from scheduler import run_deadline_scheduler
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -78,12 +80,17 @@ async def main():
     if port_env and port_env.isdigit():
         web_runner = await start_web_server(int(port_env))
 
+    # Start background deadline reminder scheduler
+    scheduler_task = asyncio.create_task(run_deadline_scheduler(bot))
+
     try:
         await dp.start_polling(bot)
     finally:
+        scheduler_task.cancel()
         if web_runner:
             await web_runner.cleanup()
         await bot.session.close()
+
 
 if __name__ == "__main__":
     try:

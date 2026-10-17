@@ -192,11 +192,13 @@ async def finish_task_submission(task_id: int, comment: str, file_id: str, file_
         await user_message.answer(worker_confirm_text, parse_mode="HTML")
 
     # 2. Notify the Task Creator / Admin
+    deadline_info = f"\n⏳ <b>Belgilangan muddat:</b> {task['deadline'] or 'Muddatsiz'}"
     admin_alert = (
         f"✅ <b>Xodim vazifani bajardi!</b>\n"
         f"────────────────────\n"
         f"📌 <b>Vazifa #{task_id}:</b> {task_title}\n"
-        f"👤 <b>Xodim:</b> {worker_name}\n"
+        f"👤 <b>Xodim:</b> {worker_name}"
+        f"{deadline_info}\n"
         f"💬 <b>Natija/Hisobot:</b> {comment or 'Tasdiqlandi'}\n"
         f"⏱ <b>Vaqt:</b> {now_str}\n"
         f"────────────────────"
@@ -220,7 +222,8 @@ async def finish_task_submission(task_id: int, comment: str, file_id: str, file_
             f"🎉 <b>VAZIFA BAJARILDI!</b>\n"
             f"────────────────────\n"
             f"👤 <b>Xodim:</b> {worker_name}\n"
-            f"📝 <b>Vazifa:</b> {task_title}\n"
+            f"📝 <b>Vazifa:</b> {task_title}"
+            f"{deadline_info}\n"
             f"💬 <b>Hisobot:</b> {comment or 'Bajarildi'}\n"
             f"⏱ <b>Bajarildi:</b> {now_str}\n"
             f"────────────────────\n"
@@ -451,9 +454,11 @@ async def show_my_tasks(message: Message, bot: Bot):
     for t in tasks:
         status_text = "⏳ Jarayonda" if t["status"] == "in_progress" else "🔴 Kutilmoqda"
         creator = t["creator_name"] or "Rahbar"
+        deadline_label = t["deadline"] or "Muddatsiz"
         msg = (
             f"📌 <b>Vazifa #{t['id']}</b>\n"
             f"📝 <b>Matn:</b> {t['title']}\n"
+            f"⏳ <b>Muddat:</b> {deadline_label}\n"
             f"👑 <b>Topshirdi:</b> {creator}\n"
             f"Holat: <i>{status_text}</i>\n"
             f"📅 Berilgan sana: <i>{t['created_at']}</i>"

@@ -37,6 +37,10 @@ async def init_db():
                 completion_file_id TEXT,
                 completion_file_type TEXT,
                 completion_comment TEXT,
+                deadline TEXT,
+                deadline_date TEXT,
+                deadline_ts TEXT,
+                reminder_sent INTEGER DEFAULT 0,
                 FOREIGN KEY (employee_id) REFERENCES employees (id)
             )
         """)
@@ -54,6 +58,14 @@ async def init_db():
             await db.execute("ALTER TABLE tasks ADD COLUMN completion_file_type TEXT")
         if "completion_comment" not in cols:
             await db.execute("ALTER TABLE tasks ADD COLUMN completion_comment TEXT")
+        if "deadline" not in cols:
+            await db.execute("ALTER TABLE tasks ADD COLUMN deadline TEXT")
+        if "deadline_date" not in cols:
+            await db.execute("ALTER TABLE tasks ADD COLUMN deadline_date TEXT")
+        if "deadline_ts" not in cols:
+            await db.execute("ALTER TABLE tasks ADD COLUMN deadline_ts TEXT")
+        if "reminder_sent" not in cols:
+            await db.execute("ALTER TABLE tasks ADD COLUMN reminder_sent INTEGER DEFAULT 0")
 
         # Settings table
         await db.execute("""
@@ -117,18 +129,92 @@ async def add_employee(full_name: str) -> int:
         await db.commit()
         return cursor.lastrowid
 
-async def create_task(title: str, description: str, employee_id: int, created_by: int, file_id: str = None, file_type: str = None) -> int:
+async def create_task(
+    title: str,
+    description: str,
+    employee_id: int,
+    created_by: int,
+    file_id: str = None,
+    file_type: str = None,
+    deadline: str = None,
+    deadline_date: str = None,
+    deadline_ts: str = None
+) -> int:
     now = get_tashkent_db_str()
     async with aiosqlite.connect(DB_PATH) as db:
         cursor = await db.execute(
             """
-            INSERT INTO tasks (title, description, employee_id, created_by, status, created_at, file_id, file_type)
-            VALUES (?, ?, ?, ?, 'pending', ?, ?, ?)
+            INSERT INTO tasks (
+                title, description, employee_id, created_by, status, created_at,
+                file_id, file_type, deadline, deadline_date, deadline_ts, reminder_sent
+            )
+            VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, 0)
             """,
-            (title, description, employee_id, created_by, now, file_id, file_type)
+            (title, description, employee_id, created_by, now, file_id, file_type, deadline, deadline_date, deadline_ts)
         )
         await db.commit()
         return cursor.lastrowid
+
+async def get_tasks_due_for_reminder(current_date_str: str):
+    """
+    Returns tasks where status is pending or in_progress,
+    deadline_date <= current_date_str, and reminder_sent == 0.
+    """
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            """
+            SELECT t.*, 
+                   e.full_name AS employee_name, 
+                   e.telegram_id AS employee_telegram_id,
+                   c.full_name AS creator_name
+            FROM tasks t
+            LEFT JOIN employees e ON t.employee_id = e.id
+            LEFT JOIN employees c ON t.created_by = c.telegram_id
+            WHERE t.status IN ('pending', 'in_progress')
+              AND t.deadline_date IS NOT NULL
+              AND t.deadline_date <= ?
+              AND t.reminder_sent = 0
+            ORDER BY t.id ASC
+            """,
+            (current_date_str,)
+        )
+        return await cursor.fetchall()
+
+async def get_tasks_overdue(current_ts_str: str):
+    """
+    Returns tasks where status is pending or in_progress,
+    deadline_ts is set and deadline_ts < current_ts_str, and reminder_sent == 1.
+    """
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            """
+            SELECT t.*, 
+                   e.full_name AS employee_name, 
+                   e.telegram_id AS employee_telegram_id,
+                   c.full_name AS creator_name
+            FROM tasks t
+            LEFT JOIN employees e ON t.employee_id = e.id
+            LEFT JOIN employees c ON t.created_by = c.telegram_id
+            WHERE t.status IN ('pending', 'in_progress')
+              AND t.deadline_ts IS NOT NULL
+              AND t.deadline_ts < ?
+              AND t.reminder_sent = 1
+            ORDER BY t.id ASC
+            """,
+            (current_ts_str,)
+        )
+        return await cursor.fetchall()
+
+async def mark_task_reminder_sent(task_id: int, level: int = 1):
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "UPDATE tasks SET reminder_sent = ? WHERE id = ?",
+            (level, task_id)
+        )
+        await db.commit()
+
 
 async def get_task(task_id: int):
     async with aiosqlite.connect(DB_PATH) as db:

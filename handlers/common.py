@@ -119,9 +119,11 @@ async def process_bind_employee(callback: CallbackQuery, bot: Bot):
             parse_mode="HTML"
         )
         for t in pending_tasks:
+            deadline_label = t["deadline"] or "Muddatsiz"
             msg = (
                 f"📌 <b>Vazifa #{t['id']}</b>\n"
                 f"📝 <b>Matn:</b> {t['title']}\n"
+                f"⏳ <b>Muddat:</b> {deadline_label}\n"
                 f"📅 <b>Berilgan sana:</b> {t['created_at']}\n\n"
                 f"Bajarilgach '✅ Bajarildi' tugmasini bosing:"
             )
