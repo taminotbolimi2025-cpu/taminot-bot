@@ -43,4 +43,9 @@ if raw_admins:
 DEFAULT_GROUP_ID = os.getenv("GROUP_ID", "").strip()
 DEFAULT_GROUP_ID = int(DEFAULT_GROUP_ID) if DEFAULT_GROUP_ID and (DEFAULT_GROUP_ID.startswith("-") or DEFAULT_GROUP_ID.isdigit()) else None
 
+# Database: PostgreSQL (Render internal or external URL) or SQLite fallback
+DEFAULT_DATABASE_URL = "postgresql://taminot_db_user:4hfA11ejPTU5pM2IcjZWF6ZRunbg4eeI@dpg-db9gkunavr4c73e0ni40-a/taminot_db"
+DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL).strip()
+
 DB_PATH = Path(__file__).resolve().parent / "taminot_bot.db"
+
