@@ -1,0 +1,15 @@
+name: 24/7 Keep-Alive for Render
+
+on:
+  schedule:
+    # Runs every 10 minutes to prevent Render free instance from sleeping
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render Health Check
+        run: |
+          curl -fsSL --retry 2 --retry-delay 5 https://taminot-bot.onrender.com/health

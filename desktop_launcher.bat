@@ -11,7 +11,7 @@ echo ====================================================
 echo.
 
 if not exist .venv (
-    echo [!] Virtual muhit (.venv) topilmadi. Yaratilmoqda...
+    echo [!] Virtual muhit topilmadi. Yaratilmoqda...
     python -m venv .venv
     .venv\Scripts\pip install -r requirements.txt
 )
